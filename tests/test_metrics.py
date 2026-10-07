@@ -5,6 +5,14 @@ import config
 import events
 import loader
 import metrics
+from models import Params
+
+
+# The safety parameters the synthetic samples were made with (CLAUDE.md section 13); independent of the
+# sidebar defaults in config.py, so changing a default does not change the expected values.
+SAMPLE_PARAMS = Params(fence_radius_m=50.0, fence_height_m=30.0, release_margin_m=15.0, confirm_s=1.0,
+                       capacity_mah=3000.0, reserve=0.20, landing_allowance_mah=150.0,
+                       return_cost_mah_per_m=0.9, warning_s=5.0)
 
 
 def load_sample(name: str):
@@ -17,8 +25,8 @@ def load_sample(name: str):
 def analyse(name: str):
     """Return (metric rows, events, truth) of one sample analysed with the default parameters."""
     df, truth = load_sample(name)
-    found = events.find_events(df, config.DEFAULT_PARAMS)
-    return metrics.compute_metrics(df, found, config.DEFAULT_PARAMS), found, truth
+    found = events.find_events(df, SAMPLE_PARAMS)
+    return metrics.compute_metrics(df, found, SAMPLE_PARAMS), found, truth
 
 
 def row_named(rows, name: str):
@@ -31,13 +39,13 @@ def row_named(rows, name: str):
 
 def test_battery_threshold_formula():
     """T(d) = C·(1 − r) − L − k·d; with the defaults 3000 · 0.8 − 150 − 0.9 · d."""
-    assert abs(metrics.battery_threshold(config.DEFAULT_PARAMS, 0.0) - 2250.0) < 1e-6
-    assert abs(metrics.battery_threshold(config.DEFAULT_PARAMS, 100.0) - 2160.0) < 1e-6
+    assert abs(metrics.battery_threshold(SAMPLE_PARAMS, 0.0) - 2250.0) < 1e-6
+    assert abs(metrics.battery_threshold(SAMPLE_PARAMS, 100.0) - 2160.0) < 1e-6
 
 
 def test_summary_used_charge_matches_the_truth():
     df, truth = load_sample("battery_rth")
-    used = row_named(metrics.summary(df, config.DEFAULT_PARAMS), "Used")
+    used = row_named(metrics.summary(df, SAMPLE_PARAMS), "Used")
     assert abs(used.value - (truth["C_mAh"] - truth["remaining_mah"])) <= 1
 
 

@@ -59,8 +59,7 @@ def map_figure(df: pd.DataFrame, events: list[Event], params: Params, cursor_s: 
     add_points(figure, [touchdown["lat"]], [touchdown["lon"]], "touchdown", config.TOUCHDOWN_COLOR,
                config.MAP_MARKER_SIZE)
     add_event_markers(figure, events)
-    time_gap_s = (df["time_s"] - cursor_s).abs()
-    cursor = df.loc[time_gap_s.idxmin()]                               # the row nearest to the cursor time
+    cursor = loader.nearest_row(df, cursor_s)
     add_points(figure, [cursor["lat"]], [cursor["lon"]], "cursor", config.CURSOR_COLOR, config.MAP_MARKER_SIZE)
 
     max_dist_m = max(df["dist_m"].max(), params.fence_radius_m)      # the fence circle must be visible too

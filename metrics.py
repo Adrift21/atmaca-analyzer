@@ -6,6 +6,7 @@ add a summary card = add one Metric line to summary(). All limits come from conf
 import pandas as pd
 
 import config
+import loader
 from models import Event, Metric, Params
 
 
@@ -150,9 +151,7 @@ def battery_rth(df: pd.DataFrame, events: list[Event], params: Params) -> list[M
     error_mah = remaining_mah = None
     rth = first_event(events, "RTH_START", "BATTERY")
     if rth is not None:
-        trigger_s = rth.time_s - params.warning_s                      # when the battery warning started
-        time_gap_s = (df["time_s"] - trigger_s).abs()
-        trigger = df.loc[time_gap_s.idxmin()]                          # the row nearest to the trigger time
+        trigger = loader.nearest_row(df, rth.time_s - params.warning_s)   # when the battery warning started
         error_mah = trigger["mah_drawn"] - battery_threshold(params, trigger["dist_m"])
         remaining_mah = params.capacity_mah - df["mah_drawn"].iloc[-1]
     error_passed = None if error_mah is None else bool(abs(error_mah) <= config.SC5_ERROR_MAX_MAH)

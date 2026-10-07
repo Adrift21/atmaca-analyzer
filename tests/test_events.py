@@ -5,7 +5,13 @@ from dataclasses import replace
 import config
 import events
 import loader
+from models import Params
 
+# The safety parameters the synthetic samples were made with (CLAUDE.md section 13); independent of the
+# sidebar defaults in config.py, so changing a default does not change the expected values.
+SAMPLE_PARAMS = Params(fence_radius_m=50.0, fence_height_m=30.0, release_margin_m=15.0, confirm_s=1.0,
+                       capacity_mah=3000.0, reserve=0.20, landing_allowance_mah=150.0,
+                       return_cost_mah_per_m=0.9, warning_s=5.0)
 TOLERANCE_S = 0.15        # the samples log the last row before a change; the detector finds the first row after it
 
 
@@ -26,7 +32,7 @@ def first_of(found: list, kind: str):
 
 def test_guest_fence_event_times():
     df, truth = load_sample("guest_fence")
-    found = events.find_events(df, config.DEFAULT_PARAMS)
+    found = events.find_events(df, SAMPLE_PARAMS)
     breach = first_of(found, "FENCE_BREACH")
     rth = first_of(found, "RTH_START")
     assert abs(breach.time_s - (truth["breach_first_exceed_s"] + truth["confirm_s"])) < TOLERANCE_S
@@ -39,7 +45,7 @@ def test_guest_fence_event_times():
 
 def test_failsafe_event_times():
     df, truth = load_sample("failsafe_rth")
-    found = events.find_events(df, config.DEFAULT_PARAMS)
+    found = events.find_events(df, SAMPLE_PARAMS)
     rth = first_of(found, "RTH_START")
     assert abs(first_of(found, "LINK_LOST").time_s - truth["link_lost_s"]) < TOLERANCE_S
     assert rth.detail == "FAILSAFE"
@@ -49,7 +55,7 @@ def test_failsafe_event_times():
 
 def test_events_are_sorted_by_time():
     df, _ = load_sample("failsafe_rth")
-    times = [event.time_s for event in events.find_events(df, config.DEFAULT_PARAMS)]
+    times = [event.time_s for event in events.find_events(df, SAMPLE_PARAMS)]
     assert times == sorted(times)
 
 
@@ -58,14 +64,14 @@ def test_rth_reason_is_inferred_when_the_log_has_none():
     for name, reason in expected.items():
         df, _ = load_sample(name)
         df["rth_reason"] = ""
-        rth = first_of(events.find_events(df, config.DEFAULT_PARAMS), "RTH_START")
+        rth = first_of(events.find_events(df, SAMPLE_PARAMS), "RTH_START")
         assert rth.detail == f"{reason} (inferred)", name
 
 
 def test_altitude_breach_only_above_h():
     df, _ = load_sample("guest_fence")                       # flies at 8 m
-    default_kinds = [event.kind for event in events.find_events(df, config.DEFAULT_PARAMS)]
+    default_kinds = [event.kind for event in events.find_events(df, SAMPLE_PARAMS)]
     assert "ALTITUDE_BREACH" not in default_kinds
-    low_fence = replace(config.DEFAULT_PARAMS, fence_height_m=5.0)
+    low_fence = replace(SAMPLE_PARAMS, fence_height_m=5.0)
     low_fence_kinds = [event.kind for event in events.find_events(df, low_fence)]
     assert "ALTITUDE_BREACH" in low_fence_kinds

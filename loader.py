@@ -66,6 +66,8 @@ def load_flight(csv_path: Path) -> pd.DataFrame:
         df = normalize_decoder_csv(df)
     df["rth_reason"] = df["rth_reason"].fillna("")
     home_lat, home_lon = find_home(df)
+    df["home_lat"] = home_lat                    # kept in every row, so a part of the flight still knows home
+    df["home_lon"] = home_lon
     x, y = geo.to_xy_m(df["lat"], df["lon"], home_lat, home_lon)
     df["x_m"] = x
     df["y_m"] = y
@@ -76,12 +78,18 @@ def load_flight(csv_path: Path) -> pd.DataFrame:
 def find_home(df: pd.DataFrame) -> tuple[float, float]:
     """Return (lat, lon) of home: GPS_home of the log if it has one, otherwise the first row with a GPS fix."""
     lat_column, lon_column = "lat", "lon"
-    if "home_lat" in df.columns:                 # decoded blackbox logs carry the home position
+    if "home_lat" in df.columns:                 # GPS_home of a blackbox log, or set by load_flight()
         lat_column, lon_column = "home_lat", "home_lon"
     for lat, lon in zip(df[lat_column], df[lon_column]):
         if pd.notna(lat) and pd.notna(lon) and lat != 0 and lon != 0:
             return float(lat), float(lon)
     raise ValueError("The flight has no row with a valid GPS fix, so home is unknown.")
+
+
+def nearest_row(df: pd.DataFrame, time_s: float) -> pd.Series:
+    """The row of the flight nearest to this time."""
+    time_gap_s = (df["time_s"] - time_s).abs()
+    return df.loc[time_gap_s.idxmin()]
 
 
 # ---------------------------------------------------------------- INAV blackbox_decode CSV

@@ -94,6 +94,8 @@ DESCENT_STEP_M = 0.05                        # the RTH descent starts at the fir
 BATTERY_REASON_TOLERANCE_MAH = 20            # RTH reason inferred as BATTERY when mAh ≥ T(d) − this [mAh]
 
 # ---------------------------------------------------------------- look
+MAP_TABLE_WIDTHS = [3, 2]                    # width ratio of the map and the success-criteria table
+CHART_COLUMNS = 2                            # time charts per row
 CHART_HEIGHT = 280                           # height of one time chart [px]
 CHART_MARGIN = {"l": 10, "r": 10, "t": 40, "b": 10}   # empty space around a chart [px]
 REFERENCE_LINE_COLOR = "red"                 # horizontal limit lines on the charts (R, H, …)

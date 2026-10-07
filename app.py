@@ -77,6 +77,8 @@ except ValueError as error:
     st.error(f"Could not load {flight_path.name}: {error}")
     show_column_report(flight_path)
     st.stop()
+start_s = float(df["time_s"].iloc[0])
+end_s = float(df["time_s"].iloc[-1])
 flight_events = events.find_events(df, params)
 flight_metrics = metrics.compute_metrics(df, flight_events, params)
 
@@ -87,11 +89,9 @@ cards = metrics.summary(df, params)
 for column, card in zip(st.columns(len(cards)), cards):
     column.metric(f"{card.name} [{card.unit}]", card.value)
 
-start_s = float(df["time_s"].iloc[0])
-end_s = float(df["time_s"].iloc[-1])
 cursor_s = st.slider("Time cursor [s]", start_s, end_s, start_s, step=config.CURSOR_STEP_S)
 
-map_column, table_column = st.columns([3, 2])
+map_column, table_column = st.columns(config.MAP_TABLE_WIDTHS)
 map_column.plotly_chart(charts.map_figure(df, flight_events, params, cursor_s))
 criteria = charts.criteria_table(flight_metrics)
 table_column.dataframe(criteria.style.map(charts.result_style, subset=["Result"]), hide_index=True,
@@ -105,9 +105,9 @@ figures = [
     charts.current_chart(df, cursor_s),
     charts.mah_chart(df, params, cursor_s),
 ]
-chart_columns = st.columns(2)
+chart_columns = st.columns(config.CHART_COLUMNS)
 for index, figure in enumerate(figures):
-    chart_columns[index % 2].plotly_chart(figure)     # even index: left column, odd index: right column
+    chart_columns[index % config.CHART_COLUMNS].plotly_chart(figure)    # charts fill the columns in turn
 
 st.subheader("Events")
 st.dataframe(charts.events_table(flight_events), hide_index=True, height="content")
