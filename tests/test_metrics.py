@@ -66,6 +66,13 @@ def test_fence_matches_the_truth():
     assert abs(row_named(rows, "Fence overshoot vertical").value - truth["fence_overshoot_v_m"]) < 0.15
 
 
+def test_breach_without_fence_rth_fails():
+    rows, _, _ = analyse("failsafe_rth")             # flies 259 m out with R = 50 m and never starts a fence RTH
+    response = row_named(rows, "Fence response (no fence RTH)")
+    assert response.value is None
+    assert response.passed is False
+
+
 def test_battery_rth_matches_the_truth():
     rows, found, truth = analyse("battery_rth")
     rth = metrics.first_event(found, "RTH_START", "BATTERY")

@@ -18,8 +18,7 @@ def battery_threshold(params: Params, dist_m: float | pd.Series) -> float | pd.S
 
 def last_armed_row(df: pd.DataFrame) -> pd.Series:
     """The last row with the motors armed: the touchdown point of the flight."""
-    armed_rows = df[df["armed"] == 1]
-    return armed_rows.iloc[-1]
+    return df[df["armed"] == 1].iloc[-1]
 
 
 def first_event(events: list[Event], kind: str, detail: str = "", after_s: float = 0.0) -> Event | None:
@@ -157,33 +156,34 @@ def battery_rth(df: pd.DataFrame, events: list[Event], params: Params) -> list[M
         error_mah = trigger["mah_drawn"] - battery_threshold(params, trigger["dist_m"])
         remaining_mah = params.capacity_mah - df["mah_drawn"].iloc[-1]
     error_passed = None if error_mah is None else bool(abs(error_mah) <= config.SC5_ERROR_MAX_MAH)
-    error_limit = f"± {config.SC5_ERROR_MAX_MAH:g}"
     min_remaining_mah = params.capacity_mah * config.SC5_MIN_REMAINING
     return [
-        Metric("SC-5", "Battery threshold error", error_mah, "mAh", error_limit, error_passed),
+        Metric("SC-5", "Battery threshold error", error_mah, "mAh", f"± {config.SC5_ERROR_MAX_MAH:g}", error_passed),
         at_least("SC-5", "Remaining after battery RTH", remaining_mah, "mAh", min_remaining_mah),
     ]
 
 
 def fence(df: pd.DataFrame, events: list[Event], params: Params) -> list[Metric]:
     """SC-6: reaction to a confirmed fence breach, and how far the drone went beyond R and H."""
-    response_s = release_s = overshoot_h_m = overshoot_v_m = None
+    response_s = release_s = overshoot_h_m = overshoot_v_m = fence_rth = None     # stay None without a breach
     breach = first_event(events, "FENCE_BREACH")
     if breach is not None:
         first_exceed_s = breach.time_s - params.confirm_s
         fence_rth = first_event(events, "RTH_START", "FENCE", first_exceed_s)
-        release = None
+        episode = df[df["time_s"] >= first_exceed_s]                   # until the release or the end of flight
         if fence_rth is not None:
             response_s = fence_rth.time_s - breach.time_s
             release = first_event(events, "FENCE_RELEASE", "", fence_rth.time_s)
-        episode = df[df["time_s"] >= first_exceed_s]                   # until the release or the end of flight
-        if release is not None:
-            release_s = release.time_s
-            episode = episode[episode["time_s"] <= release_s]
+            if release is not None:
+                release_s = release.time_s
+                episode = episode[episode["time_s"] <= release_s]
         overshoot_h_m = episode["dist_m"].max() - params.fence_radius_m
         overshoot_v_m = max(0.0, episode["alt_m"].max() - params.fence_height_m)
+    response = at_most("SC-6", "Fence response", response_s, "s", config.SC6_RESPONSE_MAX_S)
+    if breach is not None and fence_rth is None:                       # breach confirmed, but no fence RTH
+        response = Metric("SC-6", "Fence response (no fence RTH)", None, "s", response.limit, False)
     return [
-        at_most("SC-6", "Fence response", response_s, "s", config.SC6_RESPONSE_MAX_S),
+        response,
         at_most("SC-6", "Fence overshoot horizontal", overshoot_h_m, "m", config.SC6_OVERSHOOT_H_MAX_M),
         at_most("SC-6", "Fence overshoot vertical", overshoot_v_m, "m", config.SC6_OVERSHOOT_V_MAX_M),
         Metric("SC-6", "Fence release at", release_s, "s", "", None),
