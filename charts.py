@@ -15,9 +15,10 @@ def time_chart(df: pd.DataFrame, column: str, title: str, unit: str,
     """Line chart of one column over time, with horizontal reference lines given as (value, label)."""
     figure = go.Figure()
     figure.add_scatter(x=df["time_s"], y=df[column], mode="lines", name=column)
-    for value, label in lines:
+    for number, (value, label) in enumerate(lines):
+        position = "top right" if number == 0 else "bottom right"   # labels of close lines must not overlap
         figure.add_hline(y=value, line_dash="dash", line_color=config.REFERENCE_LINE_COLOR,
-                         annotation_text=label)
+                         annotation_text=label, annotation_position=position)
     figure.update_layout(title=title, height=config.CHART_HEIGHT, margin=config.CHART_MARGIN)
     figure.update_xaxes(title="time [s]")
     figure.update_yaxes(title=unit)
@@ -25,14 +26,18 @@ def time_chart(df: pd.DataFrame, column: str, title: str, unit: str,
 
 
 def altitude_chart(df: pd.DataFrame, params: Params) -> go.Figure:
-    """Altitude above the take-off point, with the fence altitude H and H − m."""
-    lines = [(params.fence_height_m, "H"), (params.fence_height_m - params.release_margin_m, "H − m")]
+    """Altitude above the take-off point, with the fence height H and the release height H − m."""
+    fence_m = params.fence_height_m
+    release_m = params.fence_height_m - params.release_margin_m
+    lines = [(fence_m, f"fence H = {fence_m:g} m"), (release_m, f"release H − m = {release_m:g} m")]
     return time_chart(df, "alt_m", "Altitude", "m", lines)
 
 
 def distance_chart(df: pd.DataFrame, params: Params) -> go.Figure:
     """Horizontal distance to home, with the fence radius R and the release radius R − m."""
-    lines = [(params.fence_radius_m, "R"), (params.fence_radius_m - params.release_margin_m, "R − m")]
+    fence_m = params.fence_radius_m
+    release_m = params.fence_radius_m - params.release_margin_m
+    lines = [(fence_m, f"fence R = {fence_m:g} m"), (release_m, f"release R − m = {release_m:g} m")]
     return time_chart(df, "dist_m", "Distance to home", "m", lines)
 
 
