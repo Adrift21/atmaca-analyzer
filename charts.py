@@ -1,7 +1,7 @@
-"""Plotly figures of the page: the map and the time-series charts below it.
+"""Everything the page draws: the map, the time-series charts and the two tables (criteria, events).
 
 Typical changes: add a chart (one small function here, one line in app.py), change a title, unit or limit line,
-or add something to the map. Colours and sizes are in config.py.
+add something to the map, or add a table column. Colours and sizes are in config.py.
 """
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,7 +10,7 @@ import config
 import geo
 import loader
 import metrics
-from models import Event, Params
+from models import Event, Metric, Params
 
 
 # ---------------------------------------------------------------- map
@@ -122,3 +122,35 @@ def mah_chart(df: pd.DataFrame, params: Params) -> go.Figure:
     threshold = metrics.battery_threshold(params, df["dist_m"])
     figure.add_scatter(x=df["time_s"], y=threshold, mode="lines", name="T(d)")
     return figure
+
+
+# ---------------------------------------------------------------- tables
+def result_text(metric: Metric) -> str:
+    """PASS / FAIL for a tested criterion, N/A when not tested, INFO for an information row."""
+    if metric.passed is None:
+        return "N/A" if metric.value is None else "INFO"
+    return "PASS" if metric.passed else "FAIL"
+
+
+def result_style(result: str) -> str:
+    """CSS for one cell of the Result column (colours in config.RESULT_COLORS)."""
+    return f"color: {config.RESULT_COLORS[result]}; font-weight: bold"
+
+
+def criteria_table(metrics: list[Metric]) -> pd.DataFrame:
+    """The metric rows as a table: Criterion, Metric, Value, Limit, Result."""
+    table_rows = []
+    for metric in metrics:
+        value = "" if metric.value is None else f"{metric.value:.2f} {metric.unit}"
+        limit = "" if metric.limit == "" else f"{metric.limit} {metric.unit}"
+        table_rows.append({"Criterion": metric.criterion, "Metric": metric.name, "Value": value,
+                           "Limit": limit, "Result": result_text(metric)})
+    return pd.DataFrame(table_rows)
+
+
+def events_table(events: list[Event]) -> pd.DataFrame:
+    """The events as a table: time [s] with one decimal, event, detail."""
+    table_rows = []
+    for event in events:
+        table_rows.append({"Time [s]": round(event.time_s, 1), "Event": event.kind, "Detail": event.detail})
+    return pd.DataFrame(table_rows)

@@ -1,7 +1,8 @@
 """All constants of the analyzer: paths, data rules, default safety parameters, analysis rules and the look.
 
-Typical changes: a default parameter in DEFAULT_PARAMS, a folder path, a colour or a chart size.
-PARAMETERS describe what was loaded on the drone (they can differ per flight and are edited in the sidebar).
+Typical changes: a default parameter in DEFAULT_PARAMS, a success limit, a folder path, a colour or a size.
+PARAMETERS describe what was loaded on the drone (they can differ per flight and are edited in the sidebar);
+LIMITS are the project's success criteria (fixed in the RAD).
 """
 from pathlib import Path
 
@@ -31,7 +32,26 @@ DEFAULT_PARAMS = Params(
     warning_s=5.0,                           # warning time before the battery RTH [s]
 )
 
+# ---------------------------------------------------------------- success-criteria LIMITS (fixed in the RAD)
+SC2_RMS_MAX_M = 1.5                          # hover drift RMS [m]
+SC2_MAX_M = 3.0                              # hover drift maximum [m]
+SC2_ALT_RMS_MAX_M = 1.0                      # hover altitude RMS [m]
+SC2_MIN_HOVER_S = 60                         # SC-2 needs a hover of at least this long [s]
+SC3_LANDING_MAX_M = 3.0                      # RTH landing distance from home [m]
+SC4_RESPONSE_MAX_S = 2.0                     # link loss -> failsafe RTH [s]
+SC5_ERROR_MAX_MAH = 50                       # |mAh at the battery RTH trigger − T(d)| [mAh]
+SC5_MIN_REMAINING = 0.20                     # charge left after a battery RTH [fraction of C]
+SC6_RESPONSE_MAX_S = 1.0                     # confirmed fence breach -> fence RTH [s]
+SC6_OVERSHOOT_H_MAX_M = 15                   # distance beyond R [m]
+SC6_OVERSHOOT_V_MAX_M = 5                    # altitude above H [m]
+SC8_MIN_FLIGHT_S = 600                       # SC-8 needs a flight of at least this long [s]
+SC8_MIN_REMAINING = 0.20                     # charge left after the endurance flight [fraction of C]
+
 # ---------------------------------------------------------------- analysis rules
+HOVER_MIN_SEGMENT_S = 20                     # shortest hover segment (EASY, sticks centred, armed) [s]
+HOVER_SETTLE_S = 2                           # the drift is measured from this long after the hover start [s]
+RETURN_CLIMB_END_SPEED_MS = 1.0              # the RTH climb ends at the first row faster than this [m/s]
+DESCENT_STEP_M = 0.05                        # the RTH descent starts at the first drop larger than this [m]
 BATTERY_REASON_TOLERANCE_MAH = 20            # RTH reason inferred as BATTERY when mAh ≥ T(d) − this [mAh]
 
 # ---------------------------------------------------------------- look
@@ -60,3 +80,4 @@ MAP_MARKER_SIZE = 14                         # home and touchdown markers [px]
 MAP_EVENT_SIZE = 10                          # event markers [px]
 MAP_ZOOM_RULE = [(90, 17), (180, 16), (370, 15), (750, 14), (1500, 13)]   # (flight stays within [m], zoom level)
 MAP_ZOOM_FAR = 12                            # zoom level for flights farther than the last rule
+RESULT_COLORS = {"PASS": "mediumseagreen", "FAIL": "red", "N/A": "grey", "INFO": "grey"}   # Result column

@@ -110,11 +110,3 @@ def fence_releases(events: list[Event]) -> list[Event]:
             releases.append(Event(event.time_s, "FENCE_RELEASE", "", event.lat, event.lon))
             waiting = False
     return releases
-
-
-def events_table(events: list[Event]) -> pd.DataFrame:
-    """The events as a table for the page: time [s] with one decimal, event, detail."""
-    table_rows = []
-    for event in events:
-        table_rows.append({"Time [s]": round(event.time_s, 1), "Event": event.kind, "Detail": event.detail})
-    return pd.DataFrame(table_rows)
