@@ -37,8 +37,8 @@ def add_event_markers(figure: go.Figure, events: list[Event]) -> None:
                           marker={"color": config.EVENT_COLOR, "size": config.MAP_EVENT_SIZE})
 
 
-def map_figure(df: pd.DataFrame, events: list[Event], params: Params) -> go.Figure:
-    """Map: path coloured by flight mode, home, touchdown, fence circle R, release circle R − m and events."""
+def map_figure(df: pd.DataFrame, events: list[Event], params: Params, cursor_s: float) -> go.Figure:
+    """Map: path by flight mode, home, touchdown, circles R and R − m, events and the time cursor."""
     home_lat, home_lon = loader.find_home(df)
     figure = go.Figure()
     figure.add_scattermap(lat=df["lat"], lon=df["lon"], mode="lines", name="path", line={"color": config.PATH_COLOR})
@@ -58,7 +58,10 @@ def map_figure(df: pd.DataFrame, events: list[Event], params: Params) -> go.Figu
     add_points(figure, [home_lat], [home_lon], "home", config.HOME_COLOR, config.MAP_MARKER_SIZE)
     add_points(figure, [touchdown["lat"]], [touchdown["lon"]], "touchdown", config.TOUCHDOWN_COLOR,
                config.MAP_MARKER_SIZE)
-    add_event_markers(figure, events)                                  # last, so they are on top
+    add_event_markers(figure, events)
+    time_gap_s = (df["time_s"] - cursor_s).abs()
+    cursor = df.loc[time_gap_s.idxmin()]                               # the row nearest to the cursor time
+    add_points(figure, [cursor["lat"]], [cursor["lon"]], "cursor", config.CURSOR_COLOR, config.MAP_MARKER_SIZE)
 
     max_dist_m = max(df["dist_m"].max(), params.fence_radius_m)      # the fence circle must be visible too
     center = {"lat": home_lat, "lon": home_lon}
@@ -68,13 +71,12 @@ def map_figure(df: pd.DataFrame, events: list[Event], params: Params) -> go.Figu
 
 
 # ---------------------------------------------------------------- time charts
-
-
-def time_chart(df: pd.DataFrame, column: str, title: str, unit: str,
+def time_chart(df: pd.DataFrame, column: str, title: str, unit: str, cursor_s: float,
                lines: list[tuple[float, str]]) -> go.Figure:
-    """Line chart of one column over time, with horizontal reference lines given as (value, label)."""
+    """Line chart of one column over time, with the time cursor and horizontal reference lines (value, label)."""
     figure = go.Figure()
     figure.add_scatter(x=df["time_s"], y=df[column], mode="lines", name=column)
+    figure.add_vline(x=cursor_s, line_color=config.CURSOR_COLOR)
     for number, (value, label) in enumerate(lines):
         position = "top right" if number == 0 else "bottom right"   # labels of close lines must not overlap
         figure.add_hline(y=value, line_dash="dash", line_color=config.REFERENCE_LINE_COLOR,
@@ -85,40 +87,40 @@ def time_chart(df: pd.DataFrame, column: str, title: str, unit: str,
     return figure
 
 
-def altitude_chart(df: pd.DataFrame, params: Params) -> go.Figure:
+def altitude_chart(df: pd.DataFrame, params: Params, cursor_s: float) -> go.Figure:
     """Altitude above the take-off point, with the fence height H and the release height H − m."""
     fence_m = params.fence_height_m
     release_m = params.fence_height_m - params.release_margin_m
     lines = [(fence_m, f"fence H = {fence_m:g} m"), (release_m, f"release H − m = {release_m:g} m")]
-    return time_chart(df, "alt_m", "Altitude", "m", lines)
+    return time_chart(df, "alt_m", "Altitude", "m", cursor_s, lines)
 
 
-def distance_chart(df: pd.DataFrame, params: Params) -> go.Figure:
+def distance_chart(df: pd.DataFrame, params: Params, cursor_s: float) -> go.Figure:
     """Horizontal distance to home, with the fence radius R and the release radius R − m."""
     fence_m = params.fence_radius_m
     release_m = params.fence_radius_m - params.release_margin_m
     lines = [(fence_m, f"fence R = {fence_m:g} m"), (release_m, f"release R − m = {release_m:g} m")]
-    return time_chart(df, "dist_m", "Distance to home", "m", lines)
+    return time_chart(df, "dist_m", "Distance to home", "m", cursor_s, lines)
 
 
-def speed_chart(df: pd.DataFrame) -> go.Figure:
+def speed_chart(df: pd.DataFrame, cursor_s: float) -> go.Figure:
     """GNSS ground speed."""
-    return time_chart(df, "ground_speed_ms", "Ground speed", "m/s", [])
+    return time_chart(df, "ground_speed_ms", "Ground speed", "m/s", cursor_s, [])
 
 
-def voltage_chart(df: pd.DataFrame) -> go.Figure:
+def voltage_chart(df: pd.DataFrame, cursor_s: float) -> go.Figure:
     """Battery voltage."""
-    return time_chart(df, "vbat_v", "Battery voltage", "V", [])
+    return time_chart(df, "vbat_v", "Battery voltage", "V", cursor_s, [])
 
 
-def current_chart(df: pd.DataFrame) -> go.Figure:
+def current_chart(df: pd.DataFrame, cursor_s: float) -> go.Figure:
     """Battery current."""
-    return time_chart(df, "current_a", "Current", "A", [])
+    return time_chart(df, "current_a", "Current", "A", cursor_s, [])
 
 
-def mah_chart(df: pd.DataFrame, params: Params) -> go.Figure:
+def mah_chart(df: pd.DataFrame, params: Params, cursor_s: float) -> go.Figure:
     """Consumed charge and the battery-RTH threshold T(d); the battery RTH is due where they meet."""
-    figure = time_chart(df, "mah_drawn", "Consumed charge and threshold T(d)", "mAh", [])
+    figure = time_chart(df, "mah_drawn", "Consumed charge and threshold T(d)", "mAh", cursor_s, [])
     threshold = metrics.battery_threshold(params, df["dist_m"])
     figure.add_scatter(x=df["time_s"], y=threshold, mode="lines", name="T(d)")
     return figure

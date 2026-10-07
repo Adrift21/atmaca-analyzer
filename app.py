@@ -1,4 +1,4 @@
-"""The web page: file and safety parameters in the sidebar; cards, map, success criteria, charts and events.
+"""The web page: file and safety parameters in the sidebar; cards, time cursor, map, criteria, charts, events.
 
 Layout only, no calculations. Typical changes: labels, the order of the sections, which charts are shown.
 Run with:  streamlit run app.py
@@ -68,19 +68,23 @@ cards = metrics.summary(df, params)
 for column, card in zip(st.columns(len(cards)), cards):
     column.metric(f"{card.name} [{card.unit}]", card.value)
 
+start_s = float(df["time_s"].iloc[0])
+end_s = float(df["time_s"].iloc[-1])
+cursor_s = st.slider("Time cursor [s]", start_s, end_s, start_s, step=config.CURSOR_STEP_S)
+
 map_column, table_column = st.columns([3, 2])
-map_column.plotly_chart(charts.map_figure(df, flight_events, params))
+map_column.plotly_chart(charts.map_figure(df, flight_events, params, cursor_s))
 criteria = charts.criteria_table(flight_metrics)
 table_column.dataframe(criteria.style.map(charts.result_style, subset=["Result"]), hide_index=True,
                        height="content")
 
 figures = [
-    charts.altitude_chart(df, params),
-    charts.distance_chart(df, params),
-    charts.speed_chart(df),
-    charts.voltage_chart(df),
-    charts.current_chart(df),
-    charts.mah_chart(df, params),
+    charts.altitude_chart(df, params, cursor_s),
+    charts.distance_chart(df, params, cursor_s),
+    charts.speed_chart(df, cursor_s),
+    charts.voltage_chart(df, cursor_s),
+    charts.current_chart(df, cursor_s),
+    charts.mah_chart(df, params, cursor_s),
 ]
 chart_columns = st.columns(2)
 for index, figure in enumerate(figures):
