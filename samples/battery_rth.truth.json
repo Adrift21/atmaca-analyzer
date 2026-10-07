@@ -1,0 +1,18 @@
+{
+  "scenario": "battery",
+  "C_mAh": 3000.0,
+  "r": 0.2,
+  "L_mAh": 150.0,
+  "k_mAh_per_m": 0.9,
+  "confirm_s": 2.0,
+  "warning_s": 5.0,
+  "trigger_s": 301.6,
+  "trigger_mah": 1974.1,
+  "threshold_at_trigger_mah": 1961.0,
+  "battery_threshold_error_mah": 13.1,
+  "rth_start_s": 306.6,
+  "rth_start_distance_m": 321.3,
+  "landing_error_m": 2.0,
+  "remaining_mah": 613.0,
+  "k_estimate_mAh_per_m": 0.9
+}

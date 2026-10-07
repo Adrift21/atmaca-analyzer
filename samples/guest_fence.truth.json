@@ -1,0 +1,13 @@
+{
+  "scenario": "fence",
+  "R_m": 50.0,
+  "H_m": 30.0,
+  "release_margin_m": 15.0,
+  "confirm_s": 1.0,
+  "breach_first_exceed_s": 17.8,
+  "rth_start_s": 19.5,
+  "fence_response_s": 0.7,
+  "fence_overshoot_h_m": 10.7,
+  "fence_overshoot_v_m": 0.0,
+  "release_s": 28.0
+}

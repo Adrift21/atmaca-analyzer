@@ -1,0 +1,8 @@
+{
+  "scenario": "failsafe",
+  "link_lost_s": 35.0,
+  "rth_start_s": 35.5,
+  "failsafe_response_s": 0.5,
+  "link_restored_s": 57.0,
+  "control_regained_s": 57.8
+}

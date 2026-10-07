@@ -1,0 +1,10 @@
+{
+  "scenario": "hover",
+  "hover_segment_s": [
+    15.1,
+    76.1
+  ],
+  "hover_drift_rms_m": 1.9,
+  "hover_drift_max_m": 3.98,
+  "alt_hold_rms_m": 0.18
+}
