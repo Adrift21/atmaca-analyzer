@@ -1,4 +1,4 @@
-"""The web page: file choice and safety parameters in the sidebar, then summary cards, map and charts.
+"""The web page: file choice and safety parameters in the sidebar, then cards, map, charts and events.
 
 Layout only, no calculations. Typical changes: labels, the order of the sections, which charts are shown.
 Run with:  streamlit run app.py
@@ -10,6 +10,7 @@ import streamlit as st
 
 import charts
 import config
+import events
 import loader
 import metrics
 from models import Params
@@ -57,6 +58,7 @@ try:
 except ValueError as error:
     st.error(f"Could not load {path.name}: {error}")
     st.stop()
+flight_events = events.find_events(df, params)
 
 # ---------------------------------------------------------------- page
 st.title(f"ATMACA Flight Analyzer – {path.name}")
@@ -65,7 +67,7 @@ cards = metrics.summary(df, params)
 for column, card in zip(st.columns(len(cards)), cards):
     column.metric(f"{card.name} [{card.unit}]", card.value)
 
-st.plotly_chart(charts.map_figure(df, params))
+st.plotly_chart(charts.map_figure(df, flight_events, params))
 
 figures = [
     charts.altitude_chart(df, params),
@@ -78,3 +80,6 @@ figures = [
 chart_columns = st.columns(2)
 for index, figure in enumerate(figures):
     chart_columns[index % 2].plotly_chart(figure)     # even index: left column, odd index: right column
+
+st.subheader("Events")
+st.dataframe(events.events_table(flight_events), hide_index=True)

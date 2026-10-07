@@ -1,4 +1,4 @@
-"""All constants of the analyzer: paths, data rules, the default safety parameters and the look of the page.
+"""All constants of the analyzer: paths, data rules, default safety parameters, analysis rules and the look.
 
 Typical changes: a default parameter in DEFAULT_PARAMS, a folder path, a colour or a chart size.
 PARAMETERS describe what was loaded on the drone (they can differ per flight and are edited in the sidebar).
@@ -31,6 +31,9 @@ DEFAULT_PARAMS = Params(
     warning_s=5.0,                           # warning time before the battery RTH [s]
 )
 
+# ---------------------------------------------------------------- analysis rules
+BATTERY_REASON_TOLERANCE_MAH = 20            # RTH reason inferred as BATTERY when mAh ≥ T(d) − this [mAh]
+
 # ---------------------------------------------------------------- look
 CHART_HEIGHT = 280                           # height of one time chart [px]
 CHART_MARGIN = {"l": 10, "r": 10, "t": 40, "b": 10}   # empty space around a chart [px]
@@ -48,10 +51,12 @@ FENCE_COLOR = "red"                          # fence circle R on the map
 RELEASE_COLOR = "orange"                     # release circle R − m on the map (drawn as dots)
 HOME_COLOR = "black"                         # home marker
 TOUCHDOWN_COLOR = "darkcyan"                 # touchdown marker (last armed row)
+EVENT_COLOR = "gold"                         # event markers on the map
 MAP_STYLE = "open-street-map"                # map tiles, need internet; "white-bg" works offline
 MAP_HEIGHT = 500                             # height of the map [px]
 MAP_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}         # empty space around the map [px]
 MAP_POINT_SIZE = 5                           # flight path points and release circle dots [px]
 MAP_MARKER_SIZE = 14                         # home and touchdown markers [px]
+MAP_EVENT_SIZE = 10                          # event markers [px]
 MAP_ZOOM_RULE = [(90, 17), (180, 16), (370, 15), (750, 14), (1500, 13)]   # (flight stays within [m], zoom level)
 MAP_ZOOM_FAR = 12                            # zoom level for flights farther than the last rule

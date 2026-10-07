@@ -10,7 +10,7 @@ import config
 import geo
 import loader
 import metrics
-from models import Params
+from models import Event, Params
 
 
 # ---------------------------------------------------------------- map
@@ -28,8 +28,17 @@ def add_points(figure: go.Figure, lats: list | pd.Series, lons: list | pd.Series
     figure.add_scattermap(lat=lats, lon=lons, mode="markers", name=name, marker={"color": color, "size": size})
 
 
-def map_figure(df: pd.DataFrame, params: Params) -> go.Figure:
-    """Map: path coloured by flight mode, home, touchdown, fence circle R and release circle R − m."""
+def add_event_markers(figure: go.Figure, events: list[Event]) -> None:
+    """One marker per event; moving the mouse over it shows time, event and detail."""
+    lats = [event.lat for event in events]
+    lons = [event.lon for event in events]
+    labels = [f"{event.time_s:.1f} s  {event.kind}  {event.detail}" for event in events]
+    figure.add_scattermap(lat=lats, lon=lons, mode="markers", name="events", text=labels, hoverinfo="text",
+                          marker={"color": config.EVENT_COLOR, "size": config.MAP_EVENT_SIZE})
+
+
+def map_figure(df: pd.DataFrame, events: list[Event], params: Params) -> go.Figure:
+    """Map: path coloured by flight mode, home, touchdown, fence circle R, release circle R − m and events."""
     home_lat, home_lon = loader.find_home(df)
     figure = go.Figure()
     figure.add_scattermap(lat=df["lat"], lon=df["lon"], mode="lines", name="path", line={"color": config.PATH_COLOR})
@@ -49,6 +58,7 @@ def map_figure(df: pd.DataFrame, params: Params) -> go.Figure:
     add_points(figure, [home_lat], [home_lon], "home", config.HOME_COLOR, config.MAP_MARKER_SIZE)
     add_points(figure, [touchdown["lat"]], [touchdown["lon"]], "touchdown", config.TOUCHDOWN_COLOR,
                config.MAP_MARKER_SIZE)
+    add_event_markers(figure, events)                                  # last, so they are on top
 
     max_dist_m = max(df["dist_m"].max(), params.fence_radius_m)      # the fence circle must be visible too
     center = {"lat": home_lat, "lon": home_lon}
