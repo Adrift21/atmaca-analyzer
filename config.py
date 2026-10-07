@@ -1,6 +1,6 @@
-"""All constants of the analyzer: paths, data rules and the default safety parameters.
+"""All constants of the analyzer: paths, data rules, the default safety parameters and the look of the page.
 
-Typical changes: a default parameter in DEFAULT_PARAMS or a folder path.
+Typical changes: a default parameter in DEFAULT_PARAMS, a folder path, a colour or a chart size.
 PARAMETERS describe what was loaded on the drone (they can differ per flight and are edited in the sidebar).
 """
 from pathlib import Path
@@ -30,3 +30,8 @@ DEFAULT_PARAMS = Params(
     return_cost_mah_per_m=0.9,               # k: charge per metre of the way home [mAh/m]
     warning_s=5.0,                           # warning time before the battery RTH [s]
 )
+
+# ---------------------------------------------------------------- look
+CHART_HEIGHT = 280                           # height of one time chart [px]
+CHART_MARGIN = {"l": 10, "r": 10, "t": 40, "b": 10}   # empty space around a chart [px]
+REFERENCE_LINE_COLOR = "red"                 # horizontal limit lines on the charts (R, H, …)
