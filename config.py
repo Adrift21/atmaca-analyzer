@@ -13,9 +13,48 @@ PROJECT_DIR = Path(__file__).parent          # folder of this file
 SAMPLES_DIR = PROJECT_DIR / "samples"        # synthetic flights with ground truth (do not edit)
 LOGS_DIR = PROJECT_DIR / "logs"              # the user's real logs and uploads
 LOG_EXTENSIONS = [".csv", ".txt", ".bbl"]    # file types listed in the sidebar (compared in lower case)
+DECODED_DIR = LOGS_DIR / "decoded"           # blackbox_decode output, one folder per log (not committed)
+DECODER_PATH = PROJECT_DIR / "tools" / "bin" / "blackbox_decode.exe"   # INAV blackbox-tools 9.0.0 (not committed)
+DECODER_ARGS = ["--merge-gps"]               # GPS in the main CSV; default units are us, V, A, cm, m/s and flag names
+DECODER_URL = "https://github.com/iNavFlight/blackbox-tools/releases/tag/v9.0.0"   # shown when the decoder is missing
 
 # ---------------------------------------------------------------- data
 SAMPLE_RATE_HZ = 10                          # rows per second of the normalized DataFrame [Hz]
+NORMALIZED_COLUMNS = ["time_s", "armed", "lat", "lon", "alt_m", "ground_speed_ms", "vbat_v", "current_a",
+                      "mah_drawn", "flight_mode", "rth_reason", "failsafe", "rc_link_ok", "sticks_centered",
+                      "gps_sats"]            # columns of a normalized CSV (same as tools/synthlog.py)
+# UNVERIFIED – check with the first bench log. Headers as blackbox_decode 9.0.0 writes them (field name, plus
+# " (unit)" for converted fields) for the INAV 9.1 blackbox fields.
+COLUMN_MAP = {                               # name used in loader.py -> column header in the decoder CSV
+    "time_us": "time (us)",
+    "vbat_v": "vbat (V)",
+    "current_a": "amperage (A)",
+    "roll_us": "rcData[0]",
+    "pitch_us": "rcData[1]",
+    "yaw_us": "rcData[2]",
+    "throttle_us": "rcData[3]",
+    "nav_alt_cm": "navPos[2]",
+    "baro_alt_cm": "BaroAlt (cm)",
+    "mode_flags": "flightModeFlags (flags)",
+    "failsafe_phase": "failsafePhase (flags)",
+    "rx_signal": "rxSignalReceived",
+    "lat": "GPS_coord[0]",
+    "lon": "GPS_coord[1]",
+    "gps_sats": "GPS_numSat",
+    "ground_speed_ms": "GPS_speed (m/s)",
+    "home_lat": "GPS_home_lat",
+    "home_lon": "GPS_home_lon",
+}
+OPTIONAL_COLUMNS = ["nav_alt_cm", "home_lat", "home_lon"]   # without them: BaroAlt, and home = first GPS fix
+MODE_RULES = [                               # UNVERIFIED: (ATMACA mode, text in flightModeFlags), first match wins,
+    ("RTH", "NAVRTH"),                       # no match = SPORT (acro); flag names as blackbox_decode 9.0.0 prints them
+    ("EASY", "NAVPOSHOLD"),
+    ("NORMAL", "ANGLE"),
+]
+FAILSAFE_IDLE = "IDLE"                       # failsafePhase text when no failsafe is active (UNVERIFIED)
+STICK_CENTER_US = 1500                       # stick centre [µs]
+STICK_DEADBAND_US = 30                       # roll, pitch, yaw count as centred within ± this [µs]
+THROTTLE_DEADBAND_US = 50                    # throttle counts as centred ("hold altitude") within ± this [µs]
 METERS_PER_DEG_LAT = 111_320.0               # metres per degree of latitude [m/°]
 CIRCLE_POINTS = 72                           # points used to draw one circle on the map
 
@@ -83,3 +122,4 @@ MAP_EVENT_SIZE = 10                          # event markers [px]
 MAP_ZOOM_RULE = [(90, 17), (180, 16), (370, 15), (750, 14), (1500, 13)]   # (flight stays within [m], zoom level)
 MAP_ZOOM_FAR = 12                            # zoom level for flights farther than the last rule
 RESULT_COLORS = {"PASS": "mediumseagreen", "FAIL": "red", "N/A": "grey", "INFO": "grey"}   # Result column
+DATA_PREVIEW_ROWS = 20                       # rows shown in the "Data" section

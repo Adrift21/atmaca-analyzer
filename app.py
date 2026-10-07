@@ -1,4 +1,4 @@
-"""The web page: file and safety parameters in the sidebar; cards, time cursor, map, criteria, charts, events.
+"""The web page: file, flight and safety parameters in the sidebar; cards, cursor, map, criteria, charts, events.
 
 Layout only, no calculations. Typical changes: labels, the order of the sections, which charts are shown.
 Run with:  streamlit run app.py
@@ -29,12 +29,30 @@ def file_label(path: Path) -> str:
     return f"{path.parent.name}/{path.name}"
 
 
-# ---------------------------------------------------------------- sidebar: file
+def show_column_report(csv_path: Path) -> None:
+    """Which expected columns the file has (helps when a real log does not load)."""
+    report = pd.DataFrame(loader.column_report(csv_path), columns=["Needed", "Column in the file", "Found"])
+    st.dataframe(report, hide_index=True)
+
+
+# ---------------------------------------------------------------- sidebar: file and flight
+upload = st.sidebar.file_uploader("Upload a log (saved into logs/)", type=config.LOG_EXTENSIONS)
+if upload is not None:
+    loader.save_upload(upload.name, upload.getvalue())
 files = loader.list_log_files()
 if not files:
     st.warning(f"No flight files found in {config.SAMPLES_DIR} or {config.LOGS_DIR}.")
     st.stop()
 path = st.sidebar.selectbox("Log file", files, format_func=file_label)
+try:
+    flights = loader.flights_in_file(path)       # decodes a blackbox log the first time
+except ValueError as error:
+    st.error(str(error))
+    st.stop()
+flight_number = 1
+if len(flights) > 1:
+    flight_number = st.sidebar.selectbox("Flight", range(1, len(flights) + 1))
+flight_path = flights[flight_number - 1]
 
 # ---------------------------------------------------------------- sidebar: parameters loaded on the drone
 st.sidebar.subheader("Parameters on the drone")
@@ -54,15 +72,16 @@ params = Params(
 )
 
 try:
-    df = load_flight_cached(str(path), path.stat().st_mtime)
+    df = load_flight_cached(str(flight_path), flight_path.stat().st_mtime)
 except ValueError as error:
-    st.error(f"Could not load {path.name}: {error}")
+    st.error(f"Could not load {flight_path.name}: {error}")
+    show_column_report(flight_path)
     st.stop()
 flight_events = events.find_events(df, params)
 flight_metrics = metrics.compute_metrics(df, flight_events, params)
 
 # ---------------------------------------------------------------- page
-st.title(f"ATMACA Flight Analyzer – {path.name}")
+st.title(f"ATMACA Flight Analyzer – {path.name} · flight {flight_number}")
 
 cards = metrics.summary(df, params)
 for column, card in zip(st.columns(len(cards)), cards):
@@ -92,3 +111,7 @@ for index, figure in enumerate(figures):
 
 st.subheader("Events")
 st.dataframe(charts.events_table(flight_events), hide_index=True, height="content")
+
+with st.expander("Data"):
+    st.dataframe(df.head(config.DATA_PREVIEW_ROWS), hide_index=True)
+    show_column_report(flight_path)
