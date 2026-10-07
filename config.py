@@ -35,3 +35,23 @@ DEFAULT_PARAMS = Params(
 CHART_HEIGHT = 280                           # height of one time chart [px]
 CHART_MARGIN = {"l": 10, "r": 10, "t": 40, "b": 10}   # empty space around a chart [px]
 REFERENCE_LINE_COLOR = "red"                 # horizontal limit lines on the charts (R, H, …)
+
+MODE_COLORS = {                              # colour of the map points per flight mode
+    "EASY": "green",
+    "NORMAL": "blue",
+    "SPORT": "purple",
+    "RTH": "deeppink",
+    "LAND": "brown",
+}
+PATH_COLOR = "grey"                          # line of the flight path on the map
+FENCE_COLOR = "red"                          # fence circle R on the map
+RELEASE_COLOR = "orange"                     # release circle R − m on the map (drawn as dots)
+HOME_COLOR = "black"                         # home marker
+TOUCHDOWN_COLOR = "darkcyan"                 # touchdown marker (last armed row)
+MAP_STYLE = "open-street-map"                # map tiles, need internet; "white-bg" works offline
+MAP_HEIGHT = 500                             # height of the map [px]
+MAP_MARGIN = {"l": 0, "r": 0, "t": 0, "b": 0}         # empty space around the map [px]
+MAP_POINT_SIZE = 5                           # flight path points and release circle dots [px]
+MAP_MARKER_SIZE = 14                         # home and touchdown markers [px]
+MAP_ZOOM_RULE = [(90, 17), (180, 16), (370, 15), (750, 14), (1500, 13)]   # (flight stays within [m], zoom level)
+MAP_ZOOM_FAR = 12                            # zoom level for flights farther than the last rule

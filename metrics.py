@@ -1,4 +1,4 @@
-"""Turns a flight into numbers: the summary values (cards) and the battery-RTH threshold T(d).
+"""Turns a flight into numbers: the summary values (cards), the battery-RTH threshold T(d) and the touchdown row.
 
 Typical change: add a summary card by adding one Metric line to summary().
 """
@@ -11,6 +11,12 @@ def battery_threshold(params: Params, dist_m: float | pd.Series) -> float | pd.S
     """T(d) = C·(1 − r) − L − k·d [mAh]: when the used charge reaches T(d), the battery RTH is due."""
     usable_mah = params.capacity_mah * (1 - params.reserve)
     return usable_mah - params.landing_allowance_mah - params.return_cost_mah_per_m * dist_m
+
+
+def last_armed_row(df: pd.DataFrame) -> pd.Series:
+    """The last row with the motors armed: the touchdown point of the flight."""
+    armed_rows = df[df["armed"] == 1]
+    return armed_rows.iloc[-1]
 
 
 def summary(df: pd.DataFrame, params: Params) -> list[Metric]:

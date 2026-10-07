@@ -1,4 +1,4 @@
-"""The web page: file choice and safety parameters in the sidebar, then summary cards and charts.
+"""The web page: file choice and safety parameters in the sidebar, then summary cards, map and charts.
 
 Layout only, no calculations. Typical changes: labels, the order of the sections, which charts are shown.
 Run with:  streamlit run app.py
@@ -64,6 +64,8 @@ st.title(f"ATMACA Flight Analyzer – {path.name}")
 cards = metrics.summary(df, params)
 for column, card in zip(st.columns(len(cards)), cards):
     column.metric(f"{card.name} [{card.unit}]", card.value)
+
+st.plotly_chart(charts.map_figure(df, params))
 
 figures = [
     charts.altitude_chart(df, params),

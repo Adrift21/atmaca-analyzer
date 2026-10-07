@@ -27,6 +27,14 @@ def test_battery_threshold_formula():
     assert abs(metrics.battery_threshold(config.DEFAULT_PARAMS, 100.0) - 2160.0) < 1e-6
 
 
+def test_touchdown_is_the_last_armed_row():
+    """battery_rth lands 2.0 m from the take-off point (the truth's landing error)."""
+    df, truth = load_sample("battery_rth")
+    touchdown = metrics.last_armed_row(df)
+    assert touchdown["armed"] == 1
+    assert abs(touchdown["dist_m"] - truth["landing_error_m"]) < 0.15
+
+
 def test_summary_used_charge_matches_the_truth():
     df, truth = load_sample("battery_rth")
     used = row_named(metrics.summary(df, config.DEFAULT_PARAMS), "Used")

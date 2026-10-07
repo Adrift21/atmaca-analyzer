@@ -1,13 +1,63 @@
-"""Plotly figures of the page: the time-series charts below the map.
+"""Plotly figures of the page: the map and the time-series charts below it.
 
-Typical changes: add a chart (one small function here, one line in app.py), change a title, unit or limit line.
+Typical changes: add a chart (one small function here, one line in app.py), change a title, unit or limit line,
+or add something to the map. Colours and sizes are in config.py.
 """
 import pandas as pd
 import plotly.graph_objects as go
 
 import config
+import geo
+import loader
 import metrics
 from models import Params
+
+
+# ---------------------------------------------------------------- map
+def map_zoom(max_dist_m: float) -> int:
+    """Zoom level of the map: the first step of config.MAP_ZOOM_RULE that covers the flight."""
+    for distance_m, zoom in config.MAP_ZOOM_RULE:
+        if max_dist_m <= distance_m:
+            return zoom
+    return config.MAP_ZOOM_FAR
+
+
+def add_points(figure: go.Figure, lats: list | pd.Series, lons: list | pd.Series,
+               name: str, color: str, size: int) -> None:
+    """Add a group of round markers to the map (one entry in the legend)."""
+    figure.add_scattermap(lat=lats, lon=lons, mode="markers", name=name, marker={"color": color, "size": size})
+
+
+def map_figure(df: pd.DataFrame, params: Params) -> go.Figure:
+    """Map: path coloured by flight mode, home, touchdown, fence circle R and release circle R − m."""
+    home_lat, home_lon = loader.find_home(df)
+    figure = go.Figure()
+    figure.add_scattermap(lat=df["lat"], lon=df["lon"], mode="lines", name="path", line={"color": config.PATH_COLOR})
+    for mode, color in config.MODE_COLORS.items():
+        rows = df[df["flight_mode"] == mode]
+        if len(rows) > 0:                                              # only modes flown appear in the legend
+            add_points(figure, rows["lat"], rows["lon"], mode, color, config.MAP_POINT_SIZE)
+
+    fence_lats, fence_lons = geo.circle_latlon(home_lat, home_lon, params.fence_radius_m)
+    figure.add_scattermap(lat=fence_lats, lon=fence_lons, mode="lines", name="fence R",
+                          line={"color": config.FENCE_COLOR})
+    release_m = params.fence_radius_m - params.release_margin_m
+    release_lats, release_lons = geo.circle_latlon(home_lat, home_lon, release_m)
+    add_points(figure, release_lats, release_lons, "release R − m", config.RELEASE_COLOR, config.MAP_POINT_SIZE)
+
+    touchdown = metrics.last_armed_row(df)
+    add_points(figure, [home_lat], [home_lon], "home", config.HOME_COLOR, config.MAP_MARKER_SIZE)
+    add_points(figure, [touchdown["lat"]], [touchdown["lon"]], "touchdown", config.TOUCHDOWN_COLOR,
+               config.MAP_MARKER_SIZE)
+
+    max_dist_m = max(df["dist_m"].max(), params.fence_radius_m)      # the fence circle must be visible too
+    center = {"lat": home_lat, "lon": home_lon}
+    figure.update_layout(map={"style": config.MAP_STYLE, "center": center, "zoom": map_zoom(max_dist_m)},
+                         height=config.MAP_HEIGHT, margin=config.MAP_MARGIN)
+    return figure
+
+
+# ---------------------------------------------------------------- time charts
 
 
 def time_chart(df: pd.DataFrame, column: str, title: str, unit: str,
