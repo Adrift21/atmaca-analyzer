@@ -1,7 +1,7 @@
 # ATMACA Flight Analyzer – Architecture
 
 Input for the RAD. The requirements and the exact rules are in [CLAUDE.md](../CLAUDE.md); this document describes
-how the program implements them.
+how the program implements them. [RAD_BRIEF.md](RAD_BRIEF.md) collects everything a RAD writer needs in one place.
 
 ## 1. Purpose
 
